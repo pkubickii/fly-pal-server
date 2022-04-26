@@ -4,7 +4,20 @@ let driver = neo4j.driver(
   "bolt://0.0.0.0:7687",
   neo4j.auth.basic(creds.neo4jusername, creds.neo4jpw)
 );
-
+const formatNeoResult = (neoResults) => {
+  const result = [];
+  neoResults.records.forEach((record) => {
+    record._fields.forEach((field) => {
+      result.push({
+        country: field.properties.country,
+        name: field.properties.name,
+        lat: field.properties.lat,
+        lng: field.properties.lng,
+      });
+    });
+  });
+  return result;
+};
 exports.get_num_nodes = async function () {
   let session = driver.session();
   const num_nodes = await session.run("MATCH (n) RETURN n", {});
@@ -28,8 +41,30 @@ exports.get_all_cities = async function () {
       });
     });
   });
-  console.log(result);
   return !result_cities ? [] : result;
+};
+
+exports.get_flight = async function (startCity, endCity) {
+  let session = driver.session();
+  const result_cities = await session.run(
+    "MATCH (source:City {name: $prop1}), (target:City {name: $prop2}) CALL gds.shortestPath.yens.stream('citiesGraph', { sourceNode: source, targetNode: target, k: 3, relationshipWeightProperty: 'time' }) YIELD index, sourceNode, targetNode, totalCost, nodeIds, costs, path RETURN index, gds.util.asNode(sourceNode).name AS sourceNodeName, gds.util.asNode(targetNode).name AS targetNodeName, totalCost, [nodeId IN nodeIds | gds.util.asNode(nodeId).name] AS nodeNames, costs, nodes(path) as path ORDER BY index",
+    {
+      prop1: startCity,
+      prop2: endCity,
+    }
+  );
+  session.close();
+  const field_result = result_cities.records.map((record) => {
+    return {
+      names: record._fields[record._fieldLookup.nodeNames],
+      cost: record._fields[record._fieldLookup.totalCost],
+      path: record._fields[record._fieldLookup.path].map(
+        (path) => path.properties
+      ),
+    };
+  });
+
+  return !result_cities ? [] : field_result;
 };
 
 exports.create_user = async function (name, email, passwd) {

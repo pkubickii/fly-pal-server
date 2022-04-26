@@ -16,7 +16,6 @@ router.get("/neo4j_get", async function (req, res, next) {
 
 router.get("/neo4j_get_cities", async function (req, res, next) {
   let result = await neo4j_calls.get_all_cities();
-  console.log("Cities from /neo4j_get_cities: ", result);
   res.status(200).send({ result });
   return { result };
 });
@@ -34,4 +33,17 @@ router.post("/neo4j_post_city", async function (req, res, next) {
   res.status(200).send("City " + string + " created");
   return 700000;
 });
+
+router.get(
+  "/neo4j_get_flight/:startCity-:endCity",
+  async function (req, res, next) {
+    let result = await neo4j_calls.get_flight(
+      req.params.startCity,
+      req.params.endCity
+    );
+    res.status(200).send({ result });
+    return { result };
+  }
+);
+
 module.exports = router;
