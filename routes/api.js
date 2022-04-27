@@ -16,7 +16,7 @@ router.get("/neo4j_get", async function (req, res, next) {
 
 router.get("/neo4j_get_cities", async function (req, res, next) {
   let result = await neo4j_calls.get_all_cities();
-  res.status(200).send({ result });
+  res.status(200).send(result);
   return { result };
 });
 
@@ -41,7 +41,8 @@ router.get(
       req.params.startCity,
       req.params.endCity
     );
-    res.status(200).send({ result });
+    console.log("ZAPYTANIE*");
+    res.status(200).send(result);
     return { result };
   }
 );
