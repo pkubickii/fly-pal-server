@@ -42,6 +42,8 @@ router.get(
       req.params.endCity
     );
     console.log("ZAPYTANIE*");
+    console.log("startCity: " + req.params.startCity);
+    console.log("endCity: " + req.params.endCity);
     res.status(200).send(result);
     return { result };
   }
