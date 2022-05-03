@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const neo4j_calls = require("../neo4j_calls/neo4j_api");
+const bcrypt = require("bcrypt");
+const saltRounds = 10;
 
 router.get("/", async function (req, res, next) {
   res.status(200).send("Root Response from FlyPal Server @ :8080/api");
@@ -9,7 +11,6 @@ router.get("/", async function (req, res, next) {
 
 router.get("/neo4j_get", async function (req, res, next) {
   let result = await neo4j_calls.get_num_nodes();
-  console.log("Number of nodes from /neo4j_get: ", result);
   res.status(200).send({ result }); //Can't send just a Number; encapsulate with {} or convert to String.
   return { result };
 });
@@ -20,10 +21,30 @@ router.get("/neo4j_get_cities", async function (req, res, next) {
   return { result };
 });
 
-router.post("/neo4j_post_user", async function (req, res, next) {
+router.post("/register", function (req, res, next) {
   let { name, email, passwd } = req.body;
-  let string = await neo4j_calls.create_user(name, email, passwd);
-  res.status(200).send("User named " + string + " created");
+
+  bcrypt.hash(passwd, saltRounds, async (err, hash) => {
+    if (err) {
+      console.log(err);
+    }
+    let user = await neo4j_calls.create_user(name, email, hash);
+    res.status(200).send("User named " + user + " created");
+  });
+  return 700000;
+});
+
+router.post("/login", async (req, res) => {
+  let { email, passwd } = req.body;
+  let user = await neo4j_calls.login_user(email);
+
+  bcrypt.compare(passwd, user.passwd, (err, result) => {
+    if (result) {
+      res.status(200).send(`${user.name} logged in with email: ${user.email}`);
+    } else {
+      res.status(200).send("No such user!");
+    }
+  });
   return 700000;
 });
 

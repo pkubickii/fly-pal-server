@@ -1,8 +1,11 @@
 const express = require("express");
 const app = express();
 const path = require("path");
-let cors = require("cors");
-let bodyParser = require("body-parser"); //Extract data from Express
+const cors = require("cors");
+const bodyParser = require("body-parser");
+const bcrypt = require("bcrypt");
+const cookieParser = require("cookie-parser");
+const session = require("express-session");
 
 app.use(cors());
 

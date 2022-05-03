@@ -22,7 +22,7 @@ exports.get_num_nodes = async function () {
   let session = driver.session();
   const num_nodes = await session.run("MATCH (n) RETURN n", {});
   session.close();
-  console.log("RESULT", !num_nodes ? 0 : num_nodes.records.length);
+  console.log("Number of nodes:", !num_nodes ? 0 : num_nodes.records.length);
   return !num_nodes ? 0 : num_nodes.records.length;
 };
 
@@ -84,6 +84,24 @@ exports.create_user = async function (name, email, passwd) {
     return user;
   }
   return user.records[0].get(0).properties.name;
+};
+
+exports.login_user = async (email, passwd) => {
+  let session = driver.session();
+  let user = "No such user!";
+  try {
+    user = await session.run("MATCH (u:User {email: $prop1}) RETURN u", {
+      prop1: email,
+    });
+  } catch (err) {
+    console.error(err);
+    return user;
+  }
+  if (user.records.length > 0) {
+    console.log(JSON.stringify(user.records[0].get(0).properties, null, 2));
+    return user.records[0].get(0).properties;
+  }
+  return user;
 };
 
 exports.create_city = async function (country, name, lat, lng) {
