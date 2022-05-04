@@ -29,7 +29,8 @@ router.post("/register", function (req, res, next) {
       console.log(err);
     }
     let user = await neo4j_calls.create_user(name, email, hash);
-    res.status(200).send("User named " + user + " created");
+    const { passwd, userNoPass } = user;
+    res.status(200).send(userNoPass);
   });
   return 700000;
 });
@@ -38,13 +39,18 @@ router.post("/login", async (req, res) => {
   let { email, passwd } = req.body;
   let user = await neo4j_calls.login_user(email);
 
-  bcrypt.compare(passwd, user.passwd, (err, result) => {
-    if (result) {
-      res.status(200).send(`${user.name} logged in with email: ${user.email}`);
-    } else {
-      res.status(200).send("No such user!");
-    }
-  });
+  if (!user.error) {
+    bcrypt.compare(passwd, user.passwd, (err, result) => {
+      if (result) {
+        const { passwd, ...userNoPass } = user;
+        res.status(200).send(userNoPass);
+      } else {
+        res.status(200).send({ error: "Bad password!" });
+      }
+    });
+  } else {
+    return res.status(200).send(user);
+  }
   return 700000;
 });
 

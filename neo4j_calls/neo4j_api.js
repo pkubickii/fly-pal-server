@@ -69,7 +69,7 @@ exports.get_flight = async function (startCity, endCity) {
 
 exports.create_user = async function (name, email, passwd) {
   let session = driver.session();
-  let user = "No User Was Created";
+  let user = { error: "Error creating user!" };
   try {
     user = await session.run(
       "MERGE (n:User {name: $prop1, email: $prop2, passwd: $prop3}) RETURN n",
@@ -83,25 +83,26 @@ exports.create_user = async function (name, email, passwd) {
     console.error(err);
     return user;
   }
-  return user.records[0].get(0).properties.name;
+  return user.records[0].get(0).properties;
 };
 
 exports.login_user = async (email, passwd) => {
   let session = driver.session();
-  let user = "No such user!";
+  let user = {};
   try {
     user = await session.run("MATCH (u:User {email: $prop1}) RETURN u", {
       prop1: email,
     });
   } catch (err) {
     console.error(err);
-    return user;
+    return { error: "Neo4j error!" };
   }
   if (user.records.length > 0) {
-    console.log(JSON.stringify(user.records[0].get(0).properties, null, 2));
+    console.log("Logged in:", user.records[0].get(0).properties);
     return user.records[0].get(0).properties;
+  } else {
+    return { error: "User doesn't exist!" };
   }
-  return user;
 };
 
 exports.create_city = async function (country, name, lat, lng) {
