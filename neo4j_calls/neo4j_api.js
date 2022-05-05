@@ -67,14 +67,14 @@ exports.get_flight = async function (startCity, endCity) {
   return !result_cities ? [] : field_result;
 };
 
-exports.create_user = async function (name, email, passwd) {
+exports.create_user = async function (username, email, passwd) {
   let session = driver.session();
   let user = { error: "Error creating user!" };
   try {
     user = await session.run(
       "MERGE (n:User {name: $prop1, email: $prop2, passwd: $prop3}) RETURN n",
       {
-        prop1: name,
+        prop1: username,
         prop2: email,
         prop3: passwd,
       }

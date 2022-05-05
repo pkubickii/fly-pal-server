@@ -22,14 +22,16 @@ router.get("/neo4j_get_cities", async function (req, res, next) {
 });
 
 router.post("/register", function (req, res, next) {
-  let { name, email, passwd } = req.body;
+  let { username, email, passwd } = req.body;
 
   bcrypt.hash(passwd, saltRounds, async (err, hash) => {
     if (err) {
       console.log(err);
     }
-    let user = await neo4j_calls.create_user(name, email, hash);
-    const { passwd, userNoPass } = user;
+    let user = await neo4j_calls.create_user(username, email, hash);
+    console.log('user', user);
+    const { passwd, ...userNoPass } = user;
+    console.log('userNoPass', userNoPass);
     res.status(200).send(userNoPass);
   });
   return 700000;
