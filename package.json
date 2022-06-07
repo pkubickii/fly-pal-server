@@ -6,6 +6,7 @@
     "cors": "^2.8.5",
     "express": "^4.17.3",
     "express-session": "^1.17.2",
-    "neo4j-driver": "^4.4.5"
+    "neo4j-driver": "^4.4.5",
+    "supervisor": "^0.12.0"
   }
 }

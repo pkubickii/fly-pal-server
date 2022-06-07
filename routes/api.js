@@ -29,9 +29,9 @@ router.post("/register", function (req, res, next) {
       console.log(err);
     }
     let user = await neo4j_calls.create_user(username, email, hash);
-    console.log('user', user);
+    console.log("user", user);
     const { passwd, ...userNoPass } = user;
-    console.log('userNoPass', userNoPass);
+    console.log("userNoPass", userNoPass);
     res.status(200).send(userNoPass);
   });
   return 700000;
@@ -64,13 +64,13 @@ router.post("/neo4j_post_city", async function (req, res, next) {
 });
 
 router.get(
-  "/neo4j_get_flight/:startCity-:endCity",
+  "/neo4j_get_flight_by_time/:startCity-:endCity",
   async function (req, res, next) {
-    let result = await neo4j_calls.get_flight(
+    let result = await neo4j_calls.get_flight_by_time(
       req.params.startCity,
       req.params.endCity
     );
-    console.log("ZAPYTANIE*");
+    console.log("Flight by time query:");
     console.log("startCity: " + req.params.startCity);
     console.log("endCity: " + req.params.endCity);
     res.status(200).send(result);
@@ -78,4 +78,18 @@ router.get(
   }
 );
 
+router.get(
+  "/neo4j_get_flight_by_cost/:startCity-:endCity",
+  async function (req, res, next) {
+    let result = await neo4j_calls.get_flight_by_cost(
+      req.params.startCity,
+      req.params.endCity
+    );
+    console.log("Flight by cost query:");
+    console.log("startCity: " + req.params.startCity);
+    console.log("endCity: " + req.params.endCity);
+    res.status(200).send(result);
+    return { result };
+  }
+);
 module.exports = router;
