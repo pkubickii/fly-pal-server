@@ -6,9 +6,35 @@ const bodyParser = require("body-parser");
 const bcrypt = require("bcrypt");
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
+const Eureka = require("eureka-js-client").Eureka;
 
-app.use(cors());
+app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
+const client = new Eureka({
+  instance: {
+    app: "fly-pal-server-neo4j",
+    hostName: "localhost",
+    ipAddr: "127.0.0.1",
+    port: {
+      $: 8080,
+      "@enabled": true,
+    },
+    vipAddress: "fly.pal.neo4j.com",
+    dataCenterInfo: {
+      "@class": "com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo",
+      name: "MyOwn",
+    },
+  },
+  eureka: {
+    // eureka server host / port / servicePath
+    host: "localhost",
+    port: 8761,
+    servicePath: "/eureka/apps/",
+  },
+});
+//get eureka instances like this:
+//const instances = client.getInstancesByAppId("app");
 
+client.start();
 let api = require("./routes/api");
 
 //Sending a GET to localhost:8080/dummy should return this
@@ -18,23 +44,21 @@ app.get("/dummy", (req, res) =>
 
 app.listen(8080);
 
-app.use(function (req, res, next) {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept"
-  );
-  next();
-});
-
 app.use(bodyParser.json());
+app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
-
-//
 app.use("/api", api);
 
 console.log("Server running on 8080...");
 
 app.use(express.static("./public/index.html"));
 
+//app.use(function (req, res, next) {
+//res.header("Access-Control-Allow-Origin", "*");
+//res.header(
+//"Access-Control-Allow-Headers",
+//"Origin, X-Requested-With, Content-Type, Accept"
+//);
+//next();
+//});
 module.exports = app;

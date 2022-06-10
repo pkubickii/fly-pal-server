@@ -3,22 +3,35 @@ const router = express.Router();
 const neo4j_calls = require("../neo4j_calls/neo4j_api");
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
+const { createToken, validateToken } = require("../jwt");
 
 router.get("/", async function (req, res, next) {
   res.status(200).send("Root Response from FlyPal Server @ :8080/api");
   return 700000;
 });
 
-router.get("/neo4j_get", async function (req, res, next) {
-  let result = await neo4j_calls.get_num_nodes();
-  res.status(200).send({ result }); //Can't send just a Number; encapsulate with {} or convert to String.
-  return { result };
-});
+router.post("/login", async (req, res) => {
+  let { email, passwd } = req.body;
+  let user = await neo4j_calls.login_user(email);
 
-router.get("/neo4j_get_cities", async function (req, res, next) {
-  let result = await neo4j_calls.get_all_cities();
-  res.status(200).send(result);
-  return { result };
+  if (!user.error) {
+    bcrypt.compare(passwd, user.passwd, (err, result) => {
+      if (result) {
+        const { passwd, ...userNoPass } = user;
+        const accessToken = createToken(user);
+        res.cookie("flypal-token", accessToken, {
+          maxAge: 2592000000,
+          httpOnly: true,
+        });
+        res.status(200).send(userNoPass);
+      } else {
+        res.status(200).send({ error: "Bad password!" });
+      }
+    });
+  } else {
+    return res.status(200).send(user);
+  }
+  return 700000;
 });
 
 router.post("/register", function (req, res, next) {
@@ -37,23 +50,21 @@ router.post("/register", function (req, res, next) {
   return 700000;
 });
 
-router.post("/login", async (req, res) => {
-  let { email, passwd } = req.body;
-  let user = await neo4j_calls.login_user(email);
+router.get("/logout", async function (req, res, next) {
+  res.clearCookie("flypal-token");
+  res.end();
+});
 
-  if (!user.error) {
-    bcrypt.compare(passwd, user.passwd, (err, result) => {
-      if (result) {
-        const { passwd, ...userNoPass } = user;
-        res.status(200).send(userNoPass);
-      } else {
-        res.status(200).send({ error: "Bad password!" });
-      }
-    });
-  } else {
-    return res.status(200).send(user);
-  }
-  return 700000;
+router.get("/neo4j_get", validateToken, async function (req, res, next) {
+  let result = await neo4j_calls.get_num_nodes();
+  res.status(200).send({ result }); //Can't send just a Number; encapsulate with {} or convert to String.
+  return { result };
+});
+
+router.get("/neo4j_get_cities", async function (req, res, next) {
+  let result = await neo4j_calls.get_all_cities();
+  res.status(200).send(result);
+  return { result };
 });
 
 router.post("/neo4j_post_city", async function (req, res, next) {

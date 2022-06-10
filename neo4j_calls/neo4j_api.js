@@ -117,7 +117,7 @@ exports.login_user = async (email, passwd) => {
     });
   } catch (err) {
     console.error(err);
-    return { error: "Neo4j error!" };
+    return { error: "Neo4j error! Bad request!" };
   }
   if (user.records.length > 0) {
     console.log("Logged in:", user.records[0].get(0).properties);
