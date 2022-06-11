@@ -1,4 +1,4 @@
-const { sign, verify } = require("jsonwebtoken");
+const { sign, verify, decode } = require("jsonwebtoken");
 
 const createToken = (user) => {
   const accessToken = sign(
@@ -18,8 +18,11 @@ const validateToken = (req, res, next) => {
   try {
     const validToken = verify(accessToken, "jwthardcodedsecretlol");
     if (validToken) {
+      var deco = decode(accessToken, { complete: true });
+      console.log(deco.header);
+      console.log(deco.payload);
       req.authenticated = true;
-      return next();
+      next();
     }
   } catch (err) {
     return res.status(400).json({ error: err });
