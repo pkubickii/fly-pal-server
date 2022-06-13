@@ -1,35 +1,35 @@
-const express = require("express");
-const app = express();
-const path = require("path");
-const cors = require("cors");
-const bodyParser = require("body-parser");
-const bcrypt = require("bcrypt");
-const cookieParser = require("cookie-parser");
-const session = require("express-session");
-const Eureka = require("eureka-js-client").Eureka;
+const express = require('express')
+const app = express()
+const path = require('path')
+const cors = require('cors')
+const bodyParser = require('body-parser')
+const bcrypt = require('bcrypt')
+const cookieParser = require('cookie-parser')
+const session = require('express-session')
+const Eureka = require('eureka-js-client').Eureka
 
 const client = new Eureka({
-  instance: {
-    app: "fly-pal-server-neo4j",
-    hostName: "localhost",
-    ipAddr: "127.0.0.1",
-    port: {
-      $: 8080,
-      "@enabled": true,
+    instance: {
+        app: 'fly-pal-server-neo4j',
+        hostName: 'localhost',
+        ipAddr: '127.0.0.1',
+        port: {
+            $: 8080,
+            '@enabled': true,
+        },
+        vipAddress: 'fly.pal.neo4j.com',
+        dataCenterInfo: {
+            '@class': 'com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo',
+            name: 'MyOwn',
+        },
     },
-    vipAddress: "fly.pal.neo4j.com",
-    dataCenterInfo: {
-      "@class": "com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo",
-      name: "MyOwn",
+    eureka: {
+        // eureka server host / port / servicePath
+        host: 'localhost',
+        port: 8761,
+        servicePath: '/eureka/apps/',
     },
-  },
-  eureka: {
-    // eureka server host / port / servicePath
-    host: "localhost",
-    port: 8761,
-    servicePath: "/eureka/apps/",
-  },
-});
+})
 
 // uncomment to connect to eureka-service:
 //client.start();
@@ -37,23 +37,23 @@ const client = new Eureka({
 //get eureka instances like this:
 //const instances = client.getInstancesByAppId("app");
 
-app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
+app.use(cors({ credentials: true, origin: 'http://localhost:3000' }))
 
 //Sending a GET to localhost:8080/dummy should return this
-app.get("/dummy", (req, res) =>
-  res.send("Response from Route of the Express Server!!")
-);
+app.get('/dummy', (req, res) =>
+    res.send('Response from Route of the Express Server!!')
+)
 
-app.listen(8080);
-app.use(bodyParser.json());
-app.use(cookieParser());
-app.use(bodyParser.urlencoded({ extended: true }));
-let api = require("./routes/api");
-app.use("/api", api);
+app.listen(8080)
+app.use(bodyParser.json())
+app.use(cookieParser())
+app.use(bodyParser.urlencoded({ extended: true }))
+let api = require('./routes/api')
+app.use('/api', api)
 
-console.log("Server running on 8080...");
+console.log('Server running on 8080...')
 
-app.use(express.static("./public/index.html"));
+app.use(express.static('./public/index.html'))
 
 //app.use(function (req, res, next) {
 //res.header("Access-Control-Allow-Origin", "*");
@@ -63,4 +63,4 @@ app.use(express.static("./public/index.html"));
 //);
 //next();
 //});
-module.exports = app;
+module.exports = app

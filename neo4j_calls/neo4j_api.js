@@ -47,7 +47,7 @@ exports.get_all_cities = async function () {
 exports.get_flight_by_time = async function (startCity, endCity) {
     let session = driver.session()
     const result_cities = await session.run(
-        "MATCH (source:City {name: $prop1}), (target:City {name: $prop2}) CALL gds.shortestPath.yens.stream('flightByTimeGraph', { sourceNode: source, targetNode: target, k: 3, relationshipWeightProperty: 'time' }) YIELD index, sourceNode, targetNode, totalCost, nodeIds, costs, path RETURN index, gds.util.asNode(sourceNode).name AS sourceNodeName, gds.util.asNode(targetNode).name AS targetNodeName, totalCost, [nodeId IN nodeIds | gds.util.asNode(nodeId).name] AS nodeNames, costs, nodes(path) as path ORDER BY index",
+        "MATCH (source:City {name: $prop1}), (target:City {name: $prop2}) CALL gds.shortestPath.yens.stream('flightByTimeGraph', { sourceNode: source, targetNode: target, k: 7, relationshipWeightProperty: 'time' }) YIELD index, sourceNode, targetNode, totalCost, nodeIds, costs, path RETURN index, gds.util.asNode(sourceNode).name AS sourceNodeName, gds.util.asNode(targetNode).name AS targetNodeName, totalCost, [nodeId IN nodeIds | gds.util.asNode(nodeId).name] AS nodeNames, [nodeId IN nodeIds | gds.util.asNode(nodeId).iataCode] AS iataCodes, costs, nodes(path) as path ORDER BY index",
         {
             prop1: startCity,
             prop2: endCity,
@@ -57,6 +57,7 @@ exports.get_flight_by_time = async function (startCity, endCity) {
     const field_result = result_cities.records.map((record) => {
         return {
             names: record._fields[record._fieldLookup.nodeNames],
+            codes: record._fields[record._fieldLookup.iataCodes],
             cost: record._fields[record._fieldLookup.totalCost],
             path: record._fields[record._fieldLookup.path].map(
                 (path) => path.properties
@@ -70,7 +71,7 @@ exports.get_flight_by_time = async function (startCity, endCity) {
 exports.get_flight_by_cost = async function (startCity, endCity) {
     let session = driver.session()
     const result_cities = await session.run(
-        "MATCH (source:City {name: $prop1}), (target:City {name: $prop2}) CALL gds.shortestPath.yens.stream('flightByCostGraph', { sourceNode: source, targetNode: target, k: 3, relationshipWeightProperty: 'cost' }) YIELD index, sourceNode, targetNode, totalCost, nodeIds, costs, path RETURN index, gds.util.asNode(sourceNode).name AS sourceNodeName, gds.util.asNode(targetNode).name AS targetNodeName, totalCost, [nodeId IN nodeIds | gds.util.asNode(nodeId).name] AS nodeNames, costs, nodes(path) as path ORDER BY index",
+        "MATCH (source:City {name: $prop1}), (target:City {name: $prop2}) CALL gds.shortestPath.yens.stream('flightByCostGraph', { sourceNode: source, targetNode: target, k: 7, relationshipWeightProperty: 'cost' }) YIELD index, sourceNode, targetNode, totalCost, nodeIds, costs, path RETURN index, gds.util.asNode(sourceNode).name AS sourceNodeName, gds.util.asNode(targetNode).name AS targetNodeName, totalCost, [nodeId IN nodeIds | gds.util.asNode(nodeId).name] AS nodeNames, [nodeId IN nodeIds | gds.util.asNode(nodeId).iataCode] AS iataCodes, costs, nodes(path) as path ORDER BY index",
         {
             prop1: startCity,
             prop2: endCity,
@@ -80,6 +81,7 @@ exports.get_flight_by_cost = async function (startCity, endCity) {
     const field_result = result_cities.records.map((record) => {
         return {
             names: record._fields[record._fieldLookup.nodeNames],
+            codes: record._fields[record._fieldLookup.iataCodes],
             cost: record._fields[record._fieldLookup.totalCost],
             path: record._fields[record._fieldLookup.path].map(
                 (path) => path.properties
