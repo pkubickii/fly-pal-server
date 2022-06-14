@@ -134,8 +134,8 @@ router.get('/neo4j_get_flight_by_time/', async function (req, res, next) {
     let { startCity, endCity } = req.query
     let result = await neo4j_calls.get_flight_by_time(startCity, endCity)
     console.log('Flight by time query:')
-    console.log('startCity: ' + req.params.startCity)
-    console.log('endCity: ' + req.params.endCity)
+    console.log('startCity: ' + startCity)
+    console.log('endCity: ' + endCity)
     res.status(200).send(result)
     return { result }
 })

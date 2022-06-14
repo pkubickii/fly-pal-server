@@ -47,7 +47,7 @@ exports.get_all_cities = async function () {
 exports.get_flight_by_time = async function (startCity, endCity) {
     let session = driver.session()
     const result_cities = await session.run(
-        "MATCH (source:City {name: $prop1}), (target:City {name: $prop2}) CALL gds.shortestPath.yens.stream('flightByTimeGraph', { sourceNode: source, targetNode: target, k: 7, relationshipWeightProperty: 'time' }) YIELD index, sourceNode, targetNode, totalCost, nodeIds, costs, path RETURN index, gds.util.asNode(sourceNode).name AS sourceNodeName, gds.util.asNode(targetNode).name AS targetNodeName, totalCost, [nodeId IN nodeIds | gds.util.asNode(nodeId).name] AS nodeNames, [nodeId IN nodeIds | gds.util.asNode(nodeId).iataCode] AS iataCodes, costs, nodes(path) as path ORDER BY index",
+        "MATCH (source:City {name: $prop1}), (target:City {name: $prop2}) CALL gds.shortestPath.yens.stream('flightByTimeGraph', { sourceNode: source, targetNode: target, k: 5, relationshipWeightProperty: 'time' }) YIELD index, sourceNode, targetNode, totalCost, nodeIds, costs, path RETURN index, gds.util.asNode(sourceNode).name AS sourceNodeName, gds.util.asNode(targetNode).name AS targetNodeName, totalCost, [nodeId IN nodeIds | gds.util.asNode(nodeId).name] AS nodeNames, [nodeId IN nodeIds | gds.util.asNode(nodeId).iataCode] AS iataCodes, costs, nodes(path) as path ORDER BY index",
         {
             prop1: startCity,
             prop2: endCity,
@@ -64,14 +64,15 @@ exports.get_flight_by_time = async function (startCity, endCity) {
             ),
         }
     })
+    const result = await append_alt_costs(field_result, 'cost')
 
-    return !result_cities ? [] : field_result
+    return !result_cities ? [] : result
 }
 
 exports.get_flight_by_cost = async function (startCity, endCity) {
     let session = driver.session()
     const result_cities = await session.run(
-        "MATCH (source:City {name: $prop1}), (target:City {name: $prop2}) CALL gds.shortestPath.yens.stream('flightByCostGraph', { sourceNode: source, targetNode: target, k: 7, relationshipWeightProperty: 'cost' }) YIELD index, sourceNode, targetNode, totalCost, nodeIds, costs, path RETURN index, gds.util.asNode(sourceNode).name AS sourceNodeName, gds.util.asNode(targetNode).name AS targetNodeName, totalCost, [nodeId IN nodeIds | gds.util.asNode(nodeId).name] AS nodeNames, [nodeId IN nodeIds | gds.util.asNode(nodeId).iataCode] AS iataCodes, costs, nodes(path) as path ORDER BY index",
+        "MATCH (source:City {name: $prop1}), (target:City {name: $prop2}) CALL gds.shortestPath.yens.stream('flightByCostGraph', { sourceNode: source, targetNode: target, k: 5, relationshipWeightProperty: 'cost' }) YIELD index, sourceNode, targetNode, totalCost, nodeIds, costs, path RETURN index, gds.util.asNode(sourceNode).name AS sourceNodeName, gds.util.asNode(targetNode).name AS targetNodeName, totalCost, [nodeId IN nodeIds | gds.util.asNode(nodeId).name] AS nodeNames, [nodeId IN nodeIds | gds.util.asNode(nodeId).iataCode] AS iataCodes, costs, nodes(path) as path ORDER BY index",
         {
             prop1: startCity,
             prop2: endCity,
@@ -88,8 +89,65 @@ exports.get_flight_by_cost = async function (startCity, endCity) {
             ),
         }
     })
+    const result = await append_alt_costs(field_result, 'time')
 
-    return !result_cities ? [] : field_result
+    return !result_cities ? [] : result
+}
+
+const append_alt_costs = async (field_result, factor) => {
+    let codesArr = field_result.map((res) => res.codes)
+    let queriesArr = codesArr.map((codes) =>
+        get_queries_for_alt_costs(codes, factor)
+    )
+    let sumPromises = queriesArr.map(async (queries) => get_alt_costs(queries))
+    let altCosts = await Promise.all(sumPromises)
+        .then((sums) => sums)
+        .catch((err) => console.log(err))
+    for (let i = 0; i < field_result.length; i++) {
+        field_result[i].altCost = altCosts[i]
+    }
+
+    return field_result
+}
+
+const get_alt_costs = async function (queries) {
+    let countsPromises = queries.map((query) => {
+        return get_alt_cost(query)
+    })
+    let result = Promise.all(countsPromises)
+        .then((counts) => {
+            let sum = 0
+            counts.forEach((count) => (sum += count))
+            return sum
+        })
+        .catch((err) => console.log(err))
+
+    return result
+}
+
+const get_alt_cost = async function (query) {
+    let session = driver.session()
+    const result = await session.run(query)
+    session.close()
+    let res =
+        result.records[0]._fields[result.records[0]._fieldLookup.altCost].low
+
+    return !result ? [] : res
+}
+
+const get_queries_for_alt_costs = (codes, factor) => {
+    let queries = []
+    for (let i = 0; i < codes.length - 1; i++) {
+        queries.push(
+            `MATCH (sc:City)-[f:FLIGHT]->(ec:City) WHERE sc.iataCode = '${
+                codes[i]
+            }' AND ec.iataCode = '${
+                codes[i + 1]
+            }' return f.${factor} AS altCost`
+        )
+    }
+
+    return queries
 }
 
 exports.create_user = async function (username, email, passwd) {
