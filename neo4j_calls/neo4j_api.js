@@ -200,14 +200,14 @@ exports.login_user = async (email, passwd) => {
     }
 }
 
-exports.create_city = async function (country, name, lat, lng) {
+exports.create_city = async function (iataCode, name, lat, lng) {
     let session = driver.session()
     let city = 'No Country For Old Man'
     try {
         city = await session.run(
-            'CREATE (city:City {country: $prop1, name: $prop2, lat: $prop3, lng: $prop4}) RETURN city',
+            'CREATE (city:City {iataCode: $prop1, name: $prop2, lat: $prop3, lng: $prop4}) RETURN city',
             {
-                prop1: country,
+                prop1: iataCode,
                 prop2: name,
                 prop3: lat,
                 prop4: lng,
@@ -220,17 +220,24 @@ exports.create_city = async function (country, name, lat, lng) {
     return city.records[0].get(0).properties.name
 }
 
-exports.create_flight = async function (startCity, endCity, time, cost) {
+exports.create_flight = async function (
+    startCity,
+    endCity,
+    distance,
+    time,
+    cost
+) {
     let session = driver.session()
     let flight = 'No Flight Zone'
     try {
         flight = await session.run(
-            'MATCH (sc: City), (ec: City) WHERE sc.name = $prop1 AND ec.name = $prop2 CREATE (sc)-[flight:FLIGHT { time: $prop3, cost: $prop4 }]->(ec) RETURN flight',
+            'MATCH (sc: City), (ec: City) WHERE sc.name = $prop1 AND ec.name = $prop2 CREATE (sc)-[flight:FLIGHT { distance: toInteger($prop3), time: toInteger($prop4), cost: toInteger($prop5) }]->(ec) RETURN flight',
             {
                 prop1: startCity,
                 prop2: endCity,
-                prop3: time,
-                prop4: cost,
+                prop3: +distance,
+                prop4: +time,
+                prop5: +cost,
             }
         )
     } catch (err) {

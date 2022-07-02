@@ -84,11 +84,11 @@ router.get('/neo4j_get_cities', async function (req, res, next) {
 })
 
 router.post('/neo4j_post_city', validateToken, async function (req, res, next) {
-    let { country, name, lat, lng } = req.body
+    let { iataCode, name, lat, lng } = req.body
     let role = req.token.role
     if (role === 'admin') {
         console.log('Welcome mister admin')
-        let city = await neo4j_calls.create_city(country, name, lat, lng)
+        let city = await neo4j_calls.create_city(iataCode, name, lat, lng)
         res.status(200).send('City ' + city + ' created')
     } else {
         console.log('Insufficent permissions!')
@@ -101,20 +101,23 @@ router.post(
     '/neo4j_post_flight',
     validateToken,
     async function (req, res, next) {
-        let { startCity, endCity, time, cost } = req.body
+        let { startCity, endCity, distance, time, cost } = req.body
         let role = req.token.role
         if (role === 'admin') {
             console.log('Welcome mister admin')
             let flight = await neo4j_calls.create_flight(
                 startCity,
                 endCity,
+                distance,
                 time,
                 cost
             )
             res.status(200).send(
                 'Flight (' +
                     startCity +
-                    ')-[time: ' +
+                    ')-[distance: ' +
+                    flight.distance +
+                    ' time: ' +
                     flight.time +
                     ' cost: ' +
                     flight.cost +
