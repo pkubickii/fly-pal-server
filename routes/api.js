@@ -156,4 +156,29 @@ router.get('/neo4j_get_flight_by_cost/', async function (req, res, next) {
     res.status(200).send(result)
     return { result }
 })
+
+var myModule = require('../app');
+router.get('/airport_image', async function (req, res, next) {
+    let instancesByAppId = myModule.client.getInstancesByAppId("FLYPAL-IMG-SERVICE");
+    console.log(instancesByAppId);
+    let { city, code } = req.query
+    let ipAddr = instancesByAppId[0].ipAddr;
+    let port = instancesByAppId[0].port.$;
+
+    let result;
+    let path = 'api/image?' + 'city="' + city + '"' + '&code="' + code + '"';
+
+    const axios = require('axios');
+    await axios
+        .get(`http://${ipAddr}:${port}/${path}`)
+        .then(res => {
+            result = res.data
+        })
+        .catch(error => {
+            console.error(error);
+        });
+
+    res.status(200).send(result)
+    return {result}
+})
 module.exports = router

@@ -33,10 +33,14 @@ const client = new Eureka({
 })
 
 // uncomment to connect to eureka-service:
-//client.start();
+client.start();
 
-//get eureka instances like this:
-//const instances = client.getInstancesByAppId("app");
+// async function dupa123(){
+//     await new Promise(f => setTimeout(f, 1000));
+    exports.client = client
+// }
+// dupa123();
+
 
 app.use(cors({ credentials: true, origin: 'http://localhost:3000' }))
 
@@ -58,7 +62,7 @@ app.use(express.static('./public/index.html'))
 
 
 async function initialize_db() {
-    await neo4j_calls.load_database()
+    // await neo4j_calls.load_database()
     await neo4j_calls.graphs_drop()
     await neo4j_calls.graphs_create()
 }
