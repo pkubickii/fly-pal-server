@@ -62,7 +62,7 @@ app.use(express.static('./public/index.html'))
 
 
 async function initialize_db() {
-    // await neo4j_calls.load_database()
+    await neo4j_calls.load_database()
     await neo4j_calls.graphs_drop()
     await neo4j_calls.graphs_create()
 }
