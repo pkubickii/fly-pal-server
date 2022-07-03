@@ -29,6 +29,9 @@ const client = new Eureka({
         host: 'localhost',
         port: 8761,
         servicePath: '/eureka/apps/',
+        clusterRefreshInterval: 3000,
+        heartbeatInterval: 3000,
+        registryFetchInterval: 3000,
     },
 })
 

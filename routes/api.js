@@ -158,40 +158,62 @@ router.get('/neo4j_get_flight_by_cost/', async function (req, res, next) {
 })
 
 var myModule = require('../app');
-const Fs = require('fs')
+const axios = require("axios");
 
 router.get('/airport_image', async function (req, res, next) {
-    let instancesByAppId = myModule.client.getInstancesByAppId("FLYPAL-IMG-SERVICE");
-    console.log(instancesByAppId);
     let {city, code} = req.query
-    let ipAddr = instancesByAppId[0].ipAddr;
-    let port = instancesByAppId[0].port.$;
+    let count = 0;
+    const maxTries = 120;
+// let number = Math.random();
+    while (true) {
+        try {
+            let instancesByAppId = myModule.client.getInstancesByAppId("FLYPAL-IMG-SERVICE");
+            let max = instancesByAppId.length;
+            let instance = Math.floor(Math.random() * (max))
+            console.log(`Connecting to instance ${instance+1} of ${max}`)
+            let ipAddr = instancesByAppId[instance].ipAddr;
+            let port = instancesByAppId[instance].port.$;
 
-    let resultLink;
-    let resultFile;
-    let path = 'api/image?' + 'city="' + city + '"' + '&code="' + code + '"';
-    // let path = 'image';
+            let resultLink;
+            let resultFile;
+            let path = 'api/image?' + 'city=' + encodeURIComponent(city) + '' + '&code=' + encodeURIComponent(code) + '';
+            // let path = 'image';
 
-    const axios = require('axios');
-    let url = `http://${ipAddr}:${port}/${path}`;
-    console.log(url)
-    await axios
-        .get(url, {
-            responseType: 'arraybuffer',
-            headers: {
-                'Media-Type': 'application/octet-stream',
-                'Accept': 'application/octet-stream'
+            let url = `http://${ipAddr}:${port}/${path}`;
+            console.log(url)
+            await axios
+                .get(url, {
+                    responseType: 'arraybuffer',
+                    headers: {
+                        'Media-Type': 'application/octet-stream',
+                        'Accept': 'application/octet-stream'
+                    }
+                })
+                .then(res => {
+                    resultLink = res.data
+                })
+                .catch(error => {
+                    res.status(500);
+                    res.close()
+                        throw error;
+
+                });
+
+
+            res.status(200).send(resultLink)
+            return {result: resultLink}
+        } catch (error) {
+            count++;
+            console.log(`${city} ERROR: retrying: ${count}/${maxTries}`)
+            await new Promise(r => setTimeout(r, 1000));
+            if (count === maxTries) {
+                res.status(500);
+                res.close()
+                return
+                // throw error;
             }
-        })
-        .then(res => {
-            resultLink = res.data
-        })
-        .catch(error => {
-            console.error(error);
-        });
+        }
+    }
 
-
-    res.status(200).send(resultLink)
-    return {result: resultLink}
 })
 module.exports = router
