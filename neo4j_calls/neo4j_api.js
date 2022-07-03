@@ -1,5 +1,5 @@
 let neo4j = require('neo4j-driver')
-let { creds } = require('./../config/credentials')
+let {creds} = require('./../config/credentials')
 let driver = neo4j.driver(
     'bolt://0.0.0.0:7687',
     neo4j.auth.basic(creds.neo4jusername, creds.neo4jpw)
@@ -21,7 +21,7 @@ const formatNeoResult = (neoResults) => {
 
 exports.graphs_drop = async function () {
     let session = driver.session()
-    const result = { data: 'Graphs dropped' }
+    const result = {data: 'Graphs dropped'}
 
     try {
         drop_time = await session.run(
@@ -34,10 +34,54 @@ exports.graphs_drop = async function () {
         )
     } catch (err) {
         console.log('No graphs to drop')
-        return { error: err }
+        return {error: err}
     }
     session.close()
     console.log('Graphs dropped.')
+    return result
+}
+
+exports.load_database = async function () {
+    let session = driver.session()
+    const fs = require('fs');
+    let dbCreationScript
+    fs.readFile('config/dbCreation.cy', 'utf8', (err, data) => {
+        if (err) {
+            console.error(err);
+            return;
+        }
+        dbCreationScript = data
+        // console.log(data);
+    });
+
+
+    const result = {}
+
+    try {
+        await session.run(
+            "MATCH (n) DETACH DELETE n;",
+            {}
+        )
+        await session.run(
+            "CREATE" +
+            "(r1:Role { role: 'user'})," +
+            "(r2:Role { role: 'admin'});",
+            {}
+        )
+        await session.run(
+            "MATCH (r:Role) WHERE r.role = 'admin' CREATE (u:User {name: 'admin', email: 'admin@admin.ad', passwd: '$2b$10$ar3vgdJNWlpf3n/RTOaYUu/5Nn36IZurU9nDz4ofRzUXwSJgBSDQW'}), (u)-[:HASROLE]->(r) RETURN u,r",
+            {}
+        )
+        await session.run(
+            dbCreationScript,
+            {}
+        )
+    } catch (err) {
+        console.error(err)
+        return {error: err}
+    }
+    session.close()
+    console.log('DB created.')
     return result
 }
 
@@ -56,7 +100,7 @@ exports.graphs_create = async function () {
         )
     } catch (err) {
         console.error(err)
-        return { error: err }
+        return {error: err}
     }
     session.close()
     console.log('Graphs created.')
@@ -197,7 +241,7 @@ const get_queries_for_alt_costs = (codes, factor) => {
 
 exports.create_user = async function (username, email, passwd) {
     let session = driver.session()
-    let user = { error: 'Error creating user!' }
+    let user = {error: 'Error creating user!'}
     try {
         user = await session.run(
             "MATCH (r:Role) WHERE r.role = 'user' CREATE (u:User {name: $prop1, email: $prop2, passwd: $prop3}), (u)-[:HASROLE]->(r) RETURN u,r",
@@ -231,7 +275,7 @@ exports.login_user = async (email, passwd) => {
         )
     } catch (err) {
         console.error(err)
-        return { error: 'Neo4j error! Bad request!' }
+        return {error: 'Neo4j error! Bad request!'}
     }
     if (user.records.length > 0) {
         console.log('Logged in:', user.records[0].get(0).properties)
@@ -241,13 +285,13 @@ exports.login_user = async (email, passwd) => {
         logged.role = role
         return logged
     } else {
-        return { error: "User doesn't exist!" }
+        return {error: "User doesn't exist!"}
     }
 }
 
 exports.create_city = async function (iataCode, name, lat, lng) {
     let session = driver.session()
-    let city = { error: 'Error creating city!' }
+    let city = {error: 'Error creating city!'}
     try {
         city = await session.run(
             'CREATE (city:City {iataCode: $prop1, name: $prop2, lat: $prop3, lng: $prop4}) RETURN city',
@@ -273,7 +317,7 @@ exports.create_flight = async function (
     cost
 ) {
     let session = driver.session()
-    let flight = { error: 'Error creating flight!' }
+    let flight = {error: 'Error creating flight!'}
     try {
         flight = await session.run(
             'MATCH (sc: City), (ec: City) WHERE sc.name = $prop1 AND ec.name = $prop2 CREATE (sc)-[flight:FLIGHT { distance: toInteger($prop3), time: toInteger($prop4), cost: toInteger($prop5) }]->(ec) RETURN flight',

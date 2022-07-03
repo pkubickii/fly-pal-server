@@ -56,8 +56,14 @@ console.log('Server running on 8080...')
 
 app.use(express.static('./public/index.html'))
 
-neo4j_calls.graphs_drop()
-neo4j_calls.graphs_create()
+
+async function initialize_db() {
+    await neo4j_calls.load_database()
+    await neo4j_calls.graphs_drop()
+    await neo4j_calls.graphs_create()
+}
+initialize_db();
+
 //app.use(function (req, res, next) {
 //res.header("Access-Control-Allow-Origin", "*");
 //res.header(
