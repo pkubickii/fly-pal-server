@@ -89,6 +89,8 @@ router.post('/neo4j_post_city', validateToken, async function (req, res, next) {
     if (role === 'admin') {
         console.log('Welcome mister admin')
         let city = await neo4j_calls.create_city(iataCode, name, lat, lng)
+        let drop = await neo4j_calls.graphs_drop()
+        let create = await neo4j_calls.graphs_create()
         res.status(200).send('City ' + city + ' created')
     } else {
         console.log('Insufficent permissions!')
@@ -125,6 +127,8 @@ router.post(
                     endCity +
                     ') created.'
             )
+            let drop = await neo4j_calls.graphs_drop()
+            let create = await neo4j_calls.graphs_create()
         } else {
             console.log('Insufficent permissions!')
             res.status(200).send({ error: 'Insufficent permissions!' })

@@ -7,6 +7,7 @@ const bcrypt = require('bcrypt')
 const cookieParser = require('cookie-parser')
 const session = require('express-session')
 const Eureka = require('eureka-js-client').Eureka
+const neo4j_calls = require('./neo4j_calls/neo4j_api')
 
 const client = new Eureka({
     instance: {
@@ -55,6 +56,8 @@ console.log('Server running on 8080...')
 
 app.use(express.static('./public/index.html'))
 
+neo4j_calls.graphs_drop()
+neo4j_calls.graphs_create()
 //app.use(function (req, res, next) {
 //res.header("Access-Control-Allow-Origin", "*");
 //res.header(

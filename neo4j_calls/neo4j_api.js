@@ -18,6 +18,51 @@ const formatNeoResult = (neoResults) => {
     })
     return result
 }
+
+exports.graphs_drop = async function () {
+    let session = driver.session()
+    const result = { data: 'Graphs dropped' }
+
+    try {
+        drop_time = await session.run(
+            "CALL gds.graph.drop('flightByTimeGraph') YIELD graphName;",
+            {}
+        )
+        drop_cost = await session.run(
+            "CALL gds.graph.drop('flightByCostGraph') YIELD graphName;",
+            {}
+        )
+    } catch (err) {
+        console.log('No graphs to drop')
+        return { error: err }
+    }
+    session.close()
+    console.log('Graphs dropped.')
+    return result
+}
+
+exports.graphs_create = async function () {
+    let session = driver.session()
+    const result = {}
+
+    try {
+        create_graph_time = await session.run(
+            "CALL gds.graph.project('flightByTimeGraph', 'City', 'FLIGHT', { relationshipProperties: 'time' });",
+            {}
+        )
+        create_graph_cost = await session.run(
+            "CALL gds.graph.project('flightByCostGraph', 'City', 'FLIGHT', { relationshipProperties: 'cost' });",
+            {}
+        )
+    } catch (err) {
+        console.error(err)
+        return { error: err }
+    }
+    session.close()
+    console.log('Graphs created.')
+    return result
+}
+
 exports.get_num_nodes = async function () {
     let session = driver.session()
     const num_nodes = await session.run('MATCH (n) RETURN n', {})
@@ -202,7 +247,7 @@ exports.login_user = async (email, passwd) => {
 
 exports.create_city = async function (iataCode, name, lat, lng) {
     let session = driver.session()
-    let city = 'No Country For Old Man'
+    let city = { error: 'Error creating city!' }
     try {
         city = await session.run(
             'CREATE (city:City {iataCode: $prop1, name: $prop2, lat: $prop3, lng: $prop4}) RETURN city',
@@ -228,7 +273,7 @@ exports.create_flight = async function (
     cost
 ) {
     let session = driver.session()
-    let flight = 'No Flight Zone'
+    let flight = { error: 'Error creating flight!' }
     try {
         flight = await session.run(
             'MATCH (sc: City), (ec: City) WHERE sc.name = $prop1 AND ec.name = $prop2 CREATE (sc)-[flight:FLIGHT { distance: toInteger($prop3), time: toInteger($prop4), cost: toInteger($prop5) }]->(ec) RETURN flight',
@@ -242,7 +287,7 @@ exports.create_flight = async function (
         )
     } catch (err) {
         console.error(err)
-        return city
+        return flight
     }
     return flight.records[0].get(0).properties
 }
